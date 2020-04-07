@@ -13,15 +13,13 @@ class Node:
         self.y = y
         self.parent = parent
         self.has_been_parent = False
-        #self.x_from_start = abs(start[0] - self.x)
-        #self.y_from_start = abs(start[1] - self.y)
+        self.path_cost = 0
+        self.x_from_start = abs(start[0] - self.x)
+        self.y_from_start = abs(start[1] - self.y)
         self.x_from_end = abs(end[0] - self.x)
         self.y_from_end = abs(end[1] - self.y)
-        try:
-            self.start_cost = self.parent.start_cost + math.sqrt((self.parent.x-self.x)**2+ (self.parent.y-self.y)**2)
-        except:
-            self.start_cost = 0
-        
+        self.start_cost = math.sqrt(self.x_from_start**2 + self.y_from_start**2)
+
         self.end_cost = math.sqrt(self.x_from_end**2 + self.y_from_end**2) 
         
         self.cost = self.start_cost + self.end_cost 
@@ -41,12 +39,18 @@ class Node:
                 return False
         except(TypeError, IndexError): # The coordinates of the cell does not exist
             return False
+    def cal_path_cost(self):
+        self.path_cost = self.parent.path_cost + math.sqrt((self.parent.x-self.x)**2 + (self.parent.y-self.y)**2)
+        self.start_cost = self.path_cost
+        self.cost = self.start_cost + self.end_cost 
 
     def already_exists(self): 
         status = False
         for node in all_nodes: # Checks all of the nodes that exist
             if node.x == self.x and node.y == self.y and node != self: # Checks if the cell has the same coordinate as an existing cell
                 status = True
+                node.parent = self.parent # Ødelegger backtracking, men er nødvendig for løsninger
+                node.cal_path_cost()
         return status
         
     def draw(self): # GUI
@@ -77,9 +81,10 @@ def find_path():
         
         # Create surrounding nodes
         for i in range(len(nodes_pattern)):
-            all_nodes.append(Node(current_node_xy[0]+nodes_pattern[i][0], current_node_xy[1]+nodes_pattern[i][1], Node.best_node)) # if we have switched between two nodes with the same cost it will fuck up
+            all_nodes.append(Node(current_node_xy[0]+nodes_pattern[i][0], current_node_xy[1]+nodes_pattern[i][1], node))
             if all_nodes[-1].is_valid() == True:
                 new_nodes_created = True
+                all_nodes[-1].cal_path_cost()
                 all_nodes[-1].draw()
                 draw_cell_v2(all_nodes[-1].y, all_nodes[-1].x, (245,182,66))
             else:
@@ -94,41 +99,45 @@ def find_path():
 
     if solution_possible:
         print("solution posssible")
-        # solution = []
-        # solution.append(parent_nodes[-1]) # The end node
-        # solution_grid[solution[-1].x][solution[-1].y] = "i"
-        # draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255)) 
-        # adjacent = []
-        # while True:
-        #     adjacent = []
-        #     for node in parent_nodes:
-        #         if node.x >= solution[-1].x-1 and node.x <= solution[-1].x+1 and node.y >= solution[-1].y-1 and node.y <= solution[-1].y+1:
-        #             if node.x == solution[-1].x and node.y == solution[-1].y:
-        #                 pass
-        #             elif node not in solution:
-        #                 adjacent.append(node)
-        #     lowest_home = adjacent[-1].start_cost
-        #     for node in adjacent:
-        #         if node.start_cost <= lowest_home:
-        #             lowest_home = node.start_cost
-        #             best_node = node      
-        #     solution.append(best_node)
-        #     solution_grid[solution[-1].x][solution[-1].y] = "i"
-        #     draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255))  
-        #     wait()
-        #     if solution[-1].x_from_start == 0 and solution[-1].y_from_start==0:
-        #         break
-
-        solution = []     
-        solution.append(Node.best_node)
+        solution = []
+        solution.append(parent_nodes[-1]) # The end node
         solution_grid[solution[-1].x][solution[-1].y] = "i"
         draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255)) 
+        adjacent = []
         
-        # Backtracks
-        while solution[-1].start_cost != 0:
-            solution.append(solution[-1].parent) # Adds the
+        while True:
+            adjacent = []
+            for node in parent_nodes:
+                if node.x >= solution[-1].x-1 and node.x <= solution[-1].x+1 and node.y >= solution[-1].y-1 and node.y <= solution[-1].y+1:
+                    if node.x == solution[-1].x and node.y == solution[-1].y:
+                        pass
+                    elif node not in solution:
+                        adjacent.append(node)
+
+            lowest_home = adjacent[-1].path_cost
+            for node in adjacent:
+                if node.path_cost <= lowest_home:
+                    lowest_home = node.path_cost
+                    best_node = node
+            
+            solution.append(best_node)
             solution_grid[solution[-1].x][solution[-1].y] = "i"
-            draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255)) 
+            draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255))  
+            wait()
+            if solution[-1].x_from_start == 0 and solution[-1].y_from_start==0:
+                break
+
+        # solution = []     
+        # solution.append(Node.best_node)
+        # solution_grid[solution[-1].x][solution[-1].y] = "i"
+        # draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255)) 
+        
+        # # Backtracks
+        # while solution[-1].start_cost != 0:
+        #     solution.append(solution[-1].parent) # Adds the
+        #     solution_grid[solution[-1].x][solution[-1].y] = "i"
+        #     draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255)) 
+        #     wait()
 
         for x in range(rows):
             print(work_grid[x])
