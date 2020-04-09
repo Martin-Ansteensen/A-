@@ -3,28 +3,15 @@ import time
 import copy
 start_time = time.time()
 
-rows = 10
-cols = 10
-#work_grid = [["0" for i in range(cols)] for j in range(rows)] 
+horizontal = 10
+vertical = 20
+work_grid = [["0" for i in range(horizontal)] for j in range(vertical)] 
 
-
-work_grid = [
-["0", "0", "0", "0", "0", "0", "0", "0", "0", "0"],
-["0", "0", "0", "0", "0", "0", "0", "0", "0", "0"],
-["0", "0", "0", "0", "0", "0", "0", "0", "0", "0"],
-["0", "0", "0", "0", "-", "-", "0", "0", "0", "0"],
-["0", "0", "0", "-", "0", "-", "0", "0", "0", "0"],
-["0", "0", "0", "-", "0", "-", "0", "0", "0", "0"],
-["0", "0", "0", "-", "-", "-", "0", "0", "0", "0"],
-["0", "0", "0", "0", "0", "0", "0", "0", "0", "0"],
-["0", "0", "0", "0", "0", "0", "0", "0", "0", "0"],
-["0", "0", "0", "0", "0", "0", "0", "0", "0", "0"]
-]
 
 solution_grid = copy.deepcopy(work_grid)
 
-start = [0, 0]
-end = [9, 9]
+start = [0, 0] #xy
+end = [9, 19 ]  #xy
 
 
 class Node:
@@ -32,6 +19,7 @@ class Node:
     lowest_cost = None
 
     def __init__(self, x, y, parent):
+        # In comes coordinates
         self.x = x
         self.y = y
         self.parent = parent
@@ -47,9 +35,9 @@ class Node:
     def is_valid(self):
         try:
             valid_conditions = [
-                work_grid[self.x][self.y] != "-", # The cell is not an obstacle
-                self.x in range(len(work_grid[self.x])), # The cells x is within the workspace
-                self.y in range(len(work_grid)), # The cells y is within the workspace
+                work_grid[self.y][self.x] != "-", # The cell is not an obstacle
+                self.x in range(horizontal), # The cells x is within the workspace
+                self.y in range(vertical), # The cells y is within the workspace
                 not self.already_exists() # Returns True if it already exists, therefor not
             ]
             
@@ -57,7 +45,8 @@ class Node:
                 return True
             else:
                 return False
-        except(TypeError, IndexError): # The coordinates of the cell does not exist
+        except(TypeError, IndexError) as e: # The coordinates of the cell does not exist
+            print(e)
             return False
 
     def already_exists(self): 
@@ -68,7 +57,7 @@ class Node:
         return status
         
     def draw(self): # GUI
-        work_grid[self.x][self.y] = "i"
+        work_grid[self.y][self.x] = "i"
 
 
 parent_nodes = []
@@ -106,11 +95,11 @@ while current_node_xy != end: # Run until the current node is the end node
             break
 
     # # Print the grid
-    for x in range(rows):
-        print(work_grid[x])
+    for i in range(vertical):
+        print(work_grid[i])
     print("\n")
 
-    input("Press N to continue...")
+    #input("Press N to continue...")
 
 
 solution = []     
@@ -124,13 +113,13 @@ while True:
         break
 
 for node in solution:
-    solution_grid[node.x][node.y] = "i"
+    solution_grid[node.y][node.x] = "i"
 
-for x in range(rows):
+for x in range(vertical):
     print(work_grid[x])
 
 print("\n")
-for x in range(rows):
+for x in range(vertical):
     print(solution_grid[x])
 
 print("--- %s seconds ---" % (time.time() - start_time))

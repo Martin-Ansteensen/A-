@@ -5,281 +5,318 @@ import pygame
 import math
 
 class Node:
+    """ Keep track of all the nodes we create and
+    their variables
+    """
     best_node = None
     lowest_cost = None
+    all_nodes = []
+    parent_nodes = []
 
+    def __init__(self, x, y, parent):
+        self.x = x
+        self.y = y
+        self.parent = parent  #  Which node it origin from
+        self.has_been_parent = False
+        self.start_cost = self.parent.start_cost + math.sqrt((self.parent.x-self.x)**2+ (self.parent.y-self.y)**2)  #  The cost from this node to the start node, using the current path
+        self.end_cost = math.sqrt((end[0] - self.x)**2 + (end[1] - self.y)**2)  #  The estimated cost to the end, calculated using pythagoras
+        self.cost = self.start_cost + self.end_cost  #  The overall cost of the node
+
+    #  Checks if a node is valid
+    def is_valid(self):
+        try:
+            valid_conditions = [
+                work_grid[self.y][self.x] != "-", # The cell is not an obstacle
+                self.x in range(vertical), # The cells x is within the workspace
+                self.y in range(horizontal), # The cells y is within the workspace
+                not self.already_exists() # Returns True if it already exists, therefor not
+            ]
+            if all(valid_conditions):
+                self.draw()
+            else:
+               del Node.all_nodes[-1]
+        except(IndexError):  # The coordinates of the cell does not exist
+            del Node.all_nodes[-1]
+   
+    #  Checks if the node already exists
+    def already_exists(self): 
+        status = False
+        for node in Node.all_nodes:  # Checks all of the nodes that exist
+            if (node.x, node.y) == (self.x, self.y) and node != self: # Checks if the cell has the same coordinate as an existing cell
+                status = True
+        return status
+        
+    #  Inserts itsfel into the GUI and the array representing the grid
+    def draw(self): 
+        work_grid[self.y][self.x] = "i"
+        if self.has_been_parent:
+            draw_node(Node.best_node.y, Node.best_node.x, parent_colour, "xy")
+        else:
+            draw_node(self.y, self.x, path_block_colour, "xy")
+
+
+class UserNodes(Node):
+    """ Only includes start- and end node, 
+    which have to be created to make the
+    calculations in the super class (Node) work
+    """
     def __init__(self, x, y, parent):
         self.x = x
         self.y = y
         self.parent = parent
         self.has_been_parent = False
-        #self.x_from_start = abs(start[0] - self.x)
-        #self.y_from_start = abs(start[1] - self.y)
-        self.x_from_end = abs(end[0] - self.x)
-        self.y_from_end = abs(end[1] - self.y)
-        try:
-            self.start_cost = self.parent.start_cost + math.sqrt((self.parent.x-self.x)**2+ (self.parent.y-self.y)**2)
-        except:
-            self.start_cost = 0
-        
-        self.end_cost = math.sqrt(self.x_from_end**2 + self.y_from_end**2) 
-        
-        self.cost = self.start_cost + self.end_cost 
-
-    def is_valid(self):
-        try:
-            valid_conditions = [
-                work_grid[self.x][self.y] != "-", # The cell is not an obstacle
-                self.x in range(len(work_grid[self.x])), # The cells x is within the workspace
-                self.y in range(len(work_grid)), # The cells y is within the workspace
-                not self.already_exists() # Returns True if it already exists, therefor not
-            ]
-            
-            if all(valid_conditions) or self.x == end_node.x and self.y == end_node.y: # The cell is valid of all conditions were met or if it has reached the end
-                return True
-            else:
-                return False
-        except(TypeError, IndexError): # The coordinates of the cell does not exist
-            return False
-
-    def already_exists(self): 
-        status = False
-        for node in all_nodes: # Checks all of the nodes that exist
-            if node.x == self.x and node.y == self.y and node != self: # Checks if the cell has the same coordinate as an existing cell
-                status = True
-        return status
-        
-    def draw(self): # GUI
-        work_grid[self.x][self.y] = "i"
-
+        self.cost, self.start_cost = 0, 0
 
 
 def find_path():
+    """ Finds the shortest path between two points,
+    using the A* algorithm
+    """
+    Node.parent_nodes = []
+    Node.all_nodes = []
     solution_possible = True
-    current_node_xy = copy.deepcopy(start)
-    all_nodes.append(start_node) # Add the starting node to the list    
     solution_grid = copy.deepcopy(work_grid)
-    start_time = time.time()
-
-    while current_node_xy != end: # Run until the current node is the end node
-        new_nodes_created = False
-        # Finds the node closest to the end node
-        Node.lowest_cost = all_nodes[-1].cost 
-        for node in all_nodes:
-            if node.cost <= Node.lowest_cost and not node.has_been_parent:
-                Node.lowest_cost = node.cost
-                Node.best_node = node
-                current_node_xy[0], current_node_xy[1] = node.x, node.y        
+    Node.all_nodes.append(start_node)  #  Add the starting node to the list    
+    Node.best_node = start_node  #  Set the start node as the best node
+    nodes_pattern = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]] # Right, left, up, down, upper right, upper left, down right, down left
+    
+    while [Node.best_node.x, Node.best_node.y] != end:  # Run until the current node is the end node
         
-        parent_nodes.append(Node.best_node)
-        Node.best_node.has_been_parent = True
-        draw_cell_v2(Node.best_node.y, Node.best_node.x, (179, 54, 23))
+        Node.best_node = Node.all_nodes[-1]  # Sets the best node as the last one created
+        for node in Node.all_nodes:
+            if node.cost <= Node.best_node.cost and not node.has_been_parent:  # Finds the node with the lowest cost
+                Node.best_node = node        
         
-        # Create surrounding nodes
+        Node.parent_nodes.append(Node.best_node)
+        Node.best_node.has_been_parent = True 
+        Node.best_node.draw() 
+        
+        # Create surrounding nodes to the best_node
         for i in range(len(nodes_pattern)):
-            all_nodes.append(Node(current_node_xy[0]+nodes_pattern[i][0], current_node_xy[1]+nodes_pattern[i][1], Node.best_node)) # if we have switched between two nodes with the same cost it will fuck up
-            if all_nodes[-1].is_valid() == True:
-                new_nodes_created = True
-                all_nodes[-1].draw()
-                draw_cell_v2(all_nodes[-1].y, all_nodes[-1].x, (245,182,66))
-            else:
-                del all_nodes[-1]
-                
-        if not new_nodes_created:
-            if len(all_nodes) == len(parent_nodes):
-                print("No solutions available")
-                solution_possible = False
-                break
-        #wait()
+            Node.all_nodes.append(Node(Node.best_node.x+nodes_pattern[i][0], Node.best_node.y+nodes_pattern[i][1], Node.best_node)) # if we have switched between two nodes with the same cost it will fuck up
+            Node.all_nodes[-1].is_valid()
+        
+        # Checks if all nodes has been parent, 
+        # and if they have there is no solution available 
+        if len(Node.all_nodes) == len(Node.parent_nodes):  
+            print("No solution available")
+            solution_possible = False
+            break
+
+        # Take a break to give the user time to see what has happend
+        time.sleep(delay.delay)  
 
     if solution_possible:
-        print("solution posssible")
-        # solution = []
-        # solution.append(parent_nodes[-1]) # The end node
-        # solution_grid[solution[-1].x][solution[-1].y] = "i"
-        # draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255)) 
-        # adjacent = []
-        # while True:
-        #     adjacent = []
-        #     for node in parent_nodes:
-        #         if node.x >= solution[-1].x-1 and node.x <= solution[-1].x+1 and node.y >= solution[-1].y-1 and node.y <= solution[-1].y+1:
-        #             if node.x == solution[-1].x and node.y == solution[-1].y:
-        #                 pass
-        #             elif node not in solution:
-        #                 adjacent.append(node)
-        #     lowest_home = adjacent[-1].start_cost
-        #     for node in adjacent:
-        #         if node.start_cost <= lowest_home:
-        #             lowest_home = node.start_cost
-        #             best_node = node      
-        #     solution.append(best_node)
-        #     solution_grid[solution[-1].x][solution[-1].y] = "i"
-        #     draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255))  
-        #     wait()
-        #     if solution[-1].x_from_start == 0 and solution[-1].y_from_start==0:
-        #         break
-
         solution = []     
         solution.append(Node.best_node)
-        solution_grid[solution[-1].x][solution[-1].y] = "i"
-        draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255)) 
+        solution_grid[solution[-1].y][solution[-1].x] = "i"
+        draw_node(solution[-1].y, solution[-1].x,  solution_colour, "xy") 
         
         # Backtracks
-        while solution[-1].start_cost != 0:
-            solution.append(solution[-1].parent) # Adds the
-            solution_grid[solution[-1].x][solution[-1].y] = "i"
-            draw_cell_v2(solution[-1].y, solution[-1].x,  (0,0,255)) 
+        while solution[-1].parent != None:
+            solution_grid[solution[-1].y][solution[-1].x] = "i"
+            draw_node(solution[-1].y, solution[-1].x,  solution_colour, "xy") 
+            solution.append(solution[-1].parent)  # Adds the parent of the current node
+            time.sleep(delay.delay)
+        
+        # The while loop exits before it adds the start node
+        solution_grid[start_node.y][start_node.x] = "i"
+        draw_node(start_node.y, start_node.x,  solution_colour, "xy") 
 
-        for x in range(rows):
-            print(work_grid[x])
-
+        # Prints the grid where the algorithm worked
+        for y in range(horizontal):
+            print(work_grid[y])
         print("\n")
-        for x in range(rows):
-            print(solution_grid[x])
-
-        print("finish")
-        print("--- %s seconds ---" % (time.time() - start_time))
-
-block_size = 20
-background_colour = (255, 255, 255)
-block_colour = (96, 110, 100)
-spacing = 1.05
-rows = 30
-cols = 30
-next_step = True
-height = int(rows*block_size*spacing)
-width = int(cols*block_size*spacing)
-grid_list = []
+        #  Prints the solution in grid format
+        for y in range(horizontal):
+            print(solution_grid[y])
+        print("Path created")
+        
+    else:
+        pass
 
 
-work_grid = [["0" for i in range(cols)] for j in range(rows)] 
+class Delay:
+    def __init__(self):
+        self.delay = 0
 
-start = [0, 0]
-end = [0, 0]
-start_node = Node(start[0], start[1], None)
-end_node = Node(end[0], end[1], None)
-parent_nodes = []
-all_nodes = []
-nodes_pattern = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]] # Right, left, up, down, upper right, upper left, down right, down left
-
-
-
-
-
-# Set up the drawing window
-pygame.init()
-window = pygame.display.set_mode([height, width])
-
-def wait():
-    while True:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-            if event.type == pygame.KEYDOWN and event.key == pygame.K_n:
-                return
 
 def drawGrid():
-    for y in range(cols):
+    """ Draws the GUI grid,
+    and links the pixel coordinates to each box
+    """
+    for y in range(vertical):
         grid_list.append([])
-        for x in range(rows):
+        for x in range(horizontal):
             rect = pygame.Rect(int(x*spacing*block_size), int(y*spacing*block_size), block_size, block_size)
             pygame.draw.rect(window, block_colour, rect, 0)
-            grid_list[y].append([int(x*spacing*block_size), int(y*spacing*block_size)])
-    
+            grid_list[y].append([int(x*spacing*block_size), int(y*spacing*block_size)])  
 
-def draw_cell(in_x, in_y, colour):
-    x, y, a, b = get_closest_cell(in_x, in_y)
 
-    rect = pygame.Rect(x, y, block_size, block_size)
+def draw_node(in_x, in_y, colour, datatype):
+    """ Draws the given coordinates in the grid
+    on the screen
+    """
+    # The given coordinates are pixels,
+    # and we have to find the closest node to the mouse
+    if datatype == "pixel":
+        pixel_x, pixel_y, xy_x, xy_y = get_closest_node(in_x, in_y)
+    elif datatype == "xy": # The coordinates are "grid" type
+        pixel_x = in_x*block_size*spacing
+        pixel_y = in_y*block_size*spacing
+
+    rect = pygame.Rect(pixel_x, pixel_y, block_size, block_size)
     pygame.draw.rect(window, colour, rect, 0)
+    pygame.display.flip()  # Partially updates screen  
 
-def draw_cell_v2(x, y, colour):
-    rect = pygame.Rect(x*block_size*spacing, y*block_size*spacing, block_size, block_size)
-    pygame.draw.rect(window, colour, rect, 0)
-    pygame.display.update()
-    
-def get_closest_cell(in_x, in_y):
+
+def get_closest_node(in_x, in_y):
+    """ Finds the closest node given a coordinate.
+    Only accepts pixels as input,
+    but outputs both pixels and coordinates
+    """
     lowest_difference = 100
-    closest_cell = [0,0]
+    closest_cell_pixel = [0,0]
     for y in range(len(grid_list)):
         for x in range(len(grid_list[y])):
             difference = abs(grid_list[y][x][0]- in_x) + abs(grid_list[y][x][1]- in_y)
             if difference < lowest_difference:
                 lowest_difference = difference
-                closest_cell = grid_list[y][x]
-                closest_cell_x = x
-                closest_cell_y = y
+                closest_cell_pixel = grid_list[y][x]
+                closest_cell_xy_x = x
+                closest_cell_xy_y = y
+    # Returns pixel coordinates, and then the xy
+    return closest_cell_pixel[0], closest_cell_pixel[1], closest_cell_xy_x, closest_cell_xy_y
 
-    return closest_cell[0], closest_cell[1], closest_cell_x, closest_cell_y
 
 def walls():
-    
+    """ Draws and removes obstacles where the mouse 
+    pointer is, if the mousebutton is pressed
+    """
+    # Draw
     if pygame.mouse.get_pressed()[0]:
-        draw_colour = (0,0,0)
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        mouse_x -= block_size/3 # take into account that the corner is counted as the origin of the cell
-        mouse_y -= block_size/3 # take into account that the corner is counted as the origin of the cell
-        draw_cell(mouse_x, mouse_y, draw_colour) # Give that cell "start node" status. If the key is pressed again the last node will "lose" its status and a new one wil be start node  
-        a, b, x, y = get_closest_cell(mouse_x,mouse_y)
-        work_grid[y][x] = "-"
-        
+        mouse_x -= block_size/3  # Take into account that the corner is counted as the origin of the cell
+        mouse_y -= block_size/3  # Take into account that the corner is counted as the origin of the cell
+        draw_node(mouse_x, mouse_y, obstacle_colour, "pixel") # Give that cell "start node" status. If the key is pressed again the last node will "lose" its status and a new one wil be start node  
+        pixel_x, pixel_y, xy_x, xy_y = get_closest_node(mouse_x,mouse_y)
+        work_grid[xy_x][xy_y] = "-"
+    # Remove  
     elif pygame.mouse.get_pressed()[2]:
-        draw_colour = block_colour
         mouse_x, mouse_y = pygame.mouse.get_pos()
-        mouse_x -= block_size/3 # take into account that the corner is counted as the origin of the cell
-        mouse_y -= block_size/3 # take into account that the corner is counted as the origin of the cell
-        draw_cell(mouse_x, mouse_y, draw_colour) # Give that cell "start node" status. If the key is pressed again the last node will "lose" its status and a new one wil be start node  
-        a, b, x, y = get_closest_cell(mouse_x,mouse_y)
-        work_grid[y][x] = "0"
+        mouse_x -= block_size/3  # Take into account that the corner is counted as the origin of the cell
+        mouse_y -= block_size/3  # Take into account that the corner is counted as the origin of the cell
+        draw_node(mouse_x, mouse_y, block_colour, "pixel")
+        pixel_x, pixel_y, xy_x, xy_y = get_closest_node(mouse_x,mouse_y)
+        work_grid[xy_x][xy_y] = "0"
 
 
-window.fill(background_colour)
-drawGrid()
-# Run until the user asks to quit
-running = True
+def main():
+    original_grid = []
+    window.fill(background_colour)
+    drawGrid()
+    draw_node(start[0], start[1], end_colour, "xy")
+    draw_node(end[0], end[1], start_colour, "xy")   
+    # Run until the user asks to quit
+    running = True
+    while running:
+        for event in pygame.event.get():  # Has the user clicked the close button
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_s:  # Mark the node as start node
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    mouse_x -= block_size/3  # Take into account that the corner is counted as the origin of the cell
+                    mouse_y -= block_size/3  # Take into account that the corner is counted as the origin of the cell               
+                    draw_node(start[1], start[0], block_colour, "xy")  # Make the former start node a normal node
+                    pixel_x, pixel_y, xy_x, xy_y = get_closest_node(mouse_x, mouse_y)
+                    start_node.x = xy_y
+                    start_node.y = xy_x
+                    start[0] = xy_y
+                    start[1] = xy_x
+                    draw_node(xy_x, xy_y, (0,255,0), "xy")  # Draw the new start node
 
+                if event.key == pygame.K_e:  # Mark the node as end_node
+                    mouse_x, mouse_y = pygame.mouse.get_pos()
+                    mouse_x -= block_size/3  # Take into account that the corner is counted as the origin of the cell
+                    mouse_y -= block_size/3  # Take into account that the corner is counted as the origin of the cell
+                    draw_node(end[1], end[0], block_colour, "xy")  # Make the fomer end node a normal node
+                    pixel_x, pixel_y, xy_x, xy_y = get_closest_node(mouse_x, mouse_y)
+                    end_node.x = xy_y
+                    end_node.y = xy_x
+                    end[0] = xy_y
+                    end[1] = xy_x
+                    draw_node(xy_x, xy_y, (255,0,0), "xy")  # Draw the new end node 
 
+                if event.key == pygame.K_DOWN:  # Reduce algorithm speed
+                    delay.delay -= 0.01
+                    if delay.delay < 0:
+                        delay.delay = 0
 
-while running:
-    # Has the user clicked the clos button
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_s: # mark cell as start_node
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                mouse_x -= block_size/3 # take into account that the corner is counted as the origin of the cell
-                mouse_y -= block_size/3 # take into account that the corner is counted as the origin of the cell
+                if event.key == pygame.K_UP:  # Increase algorithm speed
+                    delay.delay += 0.01
                 
-                a, b, x, y = get_closest_cell(mouse_x, mouse_y)
-                start_node.x = y
-                start_node.y = x
-                start[0] = y
-                start[1] = x
-                draw_cell(mouse_x, mouse_y, (0,255,0)) # Give that cell "start node" status. If the key is pressed again the last node will "lose" its status and a new one wil be start node
-                
-            if event.key == pygame.K_e: # mark cell as end_node
-                mouse_x, mouse_y = pygame.mouse.get_pos()
-                mouse_x -= block_size/3 # take into account that the corner is counted as the origin of the cell
-                mouse_y -= block_size/3 # take into account that the corner is counted as the origin of the cell
-                a, b, x, y = get_closest_cell(mouse_x, mouse_y)
-                end_node.x = y
-                end_node.y = x
-                end[0] = y
-                end[1] = x
-                draw_cell(mouse_x, mouse_y, (255,0,0)) # Give that cell "start node" status. If the key is pressed again the last node will "lose" its status and a new one wil be start node
+                #  Clear the visualisation of the algorithm
+                if event.key == pygame.K_c:
+                    for i in range(len(original_grid)):
+                        for j in range(len(original_grid[i])):
+                            if original_grid[i][j] == "-":
+                                draw_node(i, j, obstacle_colour, "xy")
+                            else:
+                                draw_node(i, j, block_colour, "xy")
+                    # Draw the end and start node that we just removed
+                    draw_node(start[1], start[0], end_colour, "xy")
+                    draw_node(end[1], end[0], start_colour, "xy")
 
+                #  Restart the game
+                if event.key == pygame.K_r:
+                    for i in range(len(original_grid)):
+                        for j in range(len(original_grid[i])):
+                                draw_node(i, j, block_colour, "xy")
+                                work_grid[j][i] = "0"
+                    # Draw end and start node
+                    draw_node(start[1], start[0], end_colour, "xy")
+                    draw_node(end[1], end[0], start_colour, "xy")
+                    original_grid = copy.deepcopy(work_grid)
 
-            if event.key == pygame.K_SPACE: # mark cell as end_node
-                find_path()
+                if event.key == pygame.K_SPACE:  # Find path between end and start node
+                    original_grid = copy.deepcopy(work_grid)
+                    find_path()
 
-            #run algorith
-    # Draw the grid and display the new image
-    walls()
-    pygame.display.update()
+        walls()  # Draw walls
+        pygame.display.flip()  # Partially update screen
 
+if __name__ == '__main__':
+    # Set up the drawing window
+    pygame.init()
+    block_size = 20
+    background_colour = (0, 0, 0)
+    block_colour = (255, 165, 91)
+    path_block_colour = (255,116, 0)
+    parent_colour = (172, 78, 0)
+    solution_colour = (105,75,31) #(115,53,40)#(91,49,2)
+    obstacle_colour = (23,15,9)
+    start_colour = (255, 0, 0)
+    end_colour = (0, 255, 0)
+    spacing = 1.1 # Make this number higher if you want to have a smaller box_size
+    horizontal = 30
+    vertical = 30
+    width = int(horizontal*block_size*spacing)
+    height = int(vertical*block_size*spacing)
+    FONT = pygame.font.SysFont("comicsansms", 20)
+    
+    grid_list = []
+    work_grid = [["0" for i in range(vertical)] for j in range(horizontal)] 
+    start = [1, 1]
+    end = [2, 2] 
+    start_node = UserNodes(start[0], start[1], None)
+    end_node = UserNodes(end[0], end[1], None)
 
-# Done! Time to quit.
-pygame.quit()
+    delay = Delay()
+    window = pygame.display.set_mode([width, height])
+
+    main()
+    pygame.quit()
+
 
 
