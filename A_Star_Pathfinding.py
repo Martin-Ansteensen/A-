@@ -1,3 +1,4 @@
+ 
 #!/usr/bin/env python3
 import time
 import copy
@@ -45,9 +46,9 @@ class Node:
                 not self.already_exists() # Returns True if it already exists, therefor not
             ]
             if all(valid_conditions):
-                self.draw
+                self.draw()
             else:
-                del Node.all_nodes[-1]
+               del Node.all_nodes[-1]
         except(IndexError):  # The coordinates of the cell does not exist
             del Node.all_nodes[-1]
    
@@ -56,38 +57,20 @@ class Node:
         status = False
         for node in Node.all_nodes:  # Checks all of the nodes that exist
             if (node.x, node.y) == (self.x, self.y) and node != self: # Checks if the cell has the same coordinate as an existing cell
-                if node.cost > self.cost:  # If the new cell (self) has a lower                   
-                    if node.has_been_parent:# == True:  # Checks if the old cell has any children
-                        print("sddh")
+                if node.cost > self.cost:  # If the new cell (self) has a lower cost
+                    Node.all_nodes.remove(self)
+                    Node.all_nodes[Node.all_nodes.index(node)] = self  # Inserts itself in the former cells index in the all_nodes
+                    if node.has_been_parent == True:  # Checks if the old cell has any children
+                        for child_node in Node.all_nodes: 
+                            if child_node.parent == node:
+                                child_node.parent = self  # Sets the new cell as parent
+                        
+                        Node.parent_nodes.remove(self)
+                        Node.parent_nodes[Node.parent_nodes.index(node)] = self  # Inserts itself in the former cells index in the parent_nodes
                         break
-                    #     print("The old node was a parent")
-                    #     for child_node in Node.all_nodes: 
-                    #         if child_node.parent == node:
-                    #             child_node.parent = self  # Sets the new cell as parent
-                        
-                    #     self.has_been_parent = True
-                    #     del Node.parent_nodes[-1]
-                    #     Node.parent_nodes[Node.parent_nodes.index(node)] = self  # Inserts itself in the former cells index in the parent_nodes
-                    #     del Node.all_nodes[Node.all_nodes.index(self)]
-                    #     del Node.all_nodes[-1]
-                    #     Node.all_nodes.append(self)
-                    #     break
-
-                        
-                        
-                        
                     else:
-                        #del Node.all_nodes[Node.all_nodes.index(self)]
-                        #del Node.all_nodes[-1]
-                        #del Node.parent_nodes[-1]
-                        #if self in Node.parent_nodes:
-                        #    del Node.parent_nodes[Node.parent_nodes.index(self)]
-                        #Node.parent_nodes[Node.parent_nodes.index(node)] = self
-                        #Node.all_nodes.append(self)  # Inserts itself in the former cells index in the all_nodes
-                        status = True
-                        #break   
-                        
-                else:
+                        break
+                else:   
                     status = True  # Returns true because the new cell (self) does not have a better path option than the old one
         return status
         
@@ -124,15 +107,15 @@ def find_path():
     Node.all_nodes.append(start_node)  #  Add the starting node to the list    
     Node.best_node = start_node  #  Set the start node as the best node
     nodes_pattern = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]] # Right, left, up, down, upper right, upper left, down right, down left
-    
     while [Node.best_node.x, Node.best_node.y] != end:  # Run until the current node is the end node
         
-        Node.best_node = Node.all_nodes[-1]  # Sets the best node as the last one created
         for node in Node.all_nodes:
-            if node.cost <= Node.best_node.cost and not node.has_been_parent:  # Finds the node with the lowest cost
-                Node.best_node = node        
-        
-        
+            if node not in Node.parent_nodes:
+                Node.best_node = node
+
+        for node in Node.all_nodes:
+            if node.cost < Node.best_node.cost and not node.has_been_parent:  # Finds the node with the lowest cost
+                Node.best_node = node     
         Node.parent_nodes.append(Node.best_node)
         Node.best_node.has_been_parent = True 
         Node.best_node.draw() 
@@ -141,9 +124,8 @@ def find_path():
         for i in range(len(nodes_pattern)):
             Node.all_nodes.append(Node(Node.best_node.x+nodes_pattern[i][0], Node.best_node.y+nodes_pattern[i][1], Node.best_node)) # if we have switched between two nodes with the same cost it will fuck up
             Node.all_nodes[-1].is_valid()
-        
 
-        if len(Node.all_nodes) < len(Node.parent_nodes) and len(Node.all_nodes) != len(Node.parent_nodes):
+        if len(Node.all_nodes) == len(Node.parent_nodes):  
             print("No solution available")
             solution_possible = False
             break
@@ -336,7 +318,7 @@ def main():
 if __name__ == '__main__':
     # Set up the drawing window
     pygame.init()
-    block_size = 20
+    block_size = 5
     background_colour = (0, 0, 0)
     block_colour = (255, 165, 91)
     path_block_colour = (255,116, 0)
@@ -345,9 +327,9 @@ if __name__ == '__main__':
     obstacle_colour = (23,15,9)
     start_colour = (255, 0, 0)
     end_colour = (0, 255, 0)
-    spacing = 1.1 # Make this number higher if you want to have a smaller box_size
-    horizontal = 30
-    vertical = 30
+    spacing = 1.3 # Make this number higher if you want to have a smaller box_size
+    horizontal = 100
+    vertical = 60
     width = int(horizontal*block_size*spacing)
     height = int(vertical*block_size*spacing)
     FONT = pygame.font.SysFont("comicsansms", 20)
@@ -364,6 +346,4 @@ if __name__ == '__main__':
 
     main()
     pygame.quit()
-
-
 
