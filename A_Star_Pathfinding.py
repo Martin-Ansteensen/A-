@@ -56,7 +56,17 @@ class Node:
         status = False
         for node in Node.all_nodes:  # Checks all of the nodes that exist
             if (node.x, node.y) == (self.x, self.y) and node != self: # Checks if the cell has the same coordinate as an existing cell
-                status = True
+                if node.cost > self.cost:  # If the new cell (self) has a lower cost
+                    if node.has_been_parent == True:  # Checks if the old cell has any children
+                        for child_node in Node.all_nodes: 
+                            if child_node.parent == node:
+                                child_node.parent = self  # Sets the new cell as parent
+                        
+                        Node.parent_nodes[Node.parent_nodes.index(node)] = self  # Inserts itself in the former cells index in the parent_nodes
+                    else:
+                        Node.all_nodes[Node.all_nodes.index(node)] = self  # Inserts itself in the former cells index in the all_nodes
+                else:
+                    status = True  # Returns true because the new cell (self) does not have a better path option than the old one
         return status
         
     #  Inserts itsfel into the GUI and the array representing the grid
