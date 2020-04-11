@@ -26,6 +26,7 @@ class Node:
     lowest_cost = None
     all_nodes = []
     parent_nodes = []
+    priority_que = []
 
     def __init__(self, x, y, parent):
         self.x = x
@@ -47,6 +48,7 @@ class Node:
             ]
             if all(valid_conditions):
                 self.draw()
+                Node.priority_que.append(self)
             else:
                del Node.all_nodes[-1]
         except(IndexError):  # The coordinates of the cell does not exist
@@ -66,12 +68,13 @@ class Node:
                                 child_node.parent = self  # Sets the new cell as parent
                         
                         Node.parent_nodes.remove(self)
+                        self.has_been_parent = True
                         Node.parent_nodes[Node.parent_nodes.index(node)] = self  # Inserts itself in the former cells index in the parent_nodes
                         break
                     else:
                         break
                 else:   
-                    status = True  # Returns true because the new cell (self) does not have a better path option than the old one
+                    return True  # Returns true because the new cell (self) does not have a better path option than the old one
         return status
         
     #  Inserts itsfel into the GUI and the array representing the grid
@@ -102,10 +105,12 @@ def find_path():
     """
     Node.parent_nodes = []
     Node.all_nodes = []
+    Node.priority_que = []
     solution_possible = True
     solution_grid = copy.deepcopy(work_grid)
-    Node.all_nodes.append(start_node)  #  Add the starting node to the list    
     Node.best_node = start_node  #  Set the start node as the best node
+    Node.priority_que.append(Node.best_node)
+    Node.all_nodes.append(Node.best_node)  #  Add the starting node to the list
     nodes_pattern = [[1, 0], [-1, 0], [0, 1], [0, -1], [1, 1], [-1, 1], [1, -1], [-1, -1]] # Right, left, up, down, upper right, upper left, down right, down left
     while [Node.best_node.x, Node.best_node.y] != end:  # Run until the current node is the end node
         
@@ -115,10 +120,12 @@ def find_path():
 
         for node in Node.all_nodes:
             if node.cost < Node.best_node.cost and not node.has_been_parent:  # Finds the node with the lowest cost
-                Node.best_node = node     
+                Node.best_node = node
+        
         Node.parent_nodes.append(Node.best_node)
         Node.best_node.has_been_parent = True 
         Node.best_node.draw() 
+        
         
         # Create surrounding nodes to the best_node
         for i in range(len(nodes_pattern)):
@@ -129,7 +136,6 @@ def find_path():
             print("No solution available")
             solution_possible = False
             break
-
         # Take a break to give the user time to see what has happend
         time.sleep(delay.delay)  
 
@@ -302,7 +308,7 @@ def main():
                     for i in range(len(original_grid)):
                         for j in range(len(original_grid[i])):
                                 draw_node(i, j, block_colour, "xy")
-                                work_grid[j][i] = "0"
+                                work_grid[i][j] = "0"
                     # Draw end and start node
                     draw_node(start[1], start[0], end_colour, "xy")
                     draw_node(end[1], end[0], start_colour, "xy")
@@ -318,7 +324,7 @@ def main():
 if __name__ == '__main__':
     # Set up the drawing window
     pygame.init()
-    block_size = 5
+    block_size = 20
     background_colour = (0, 0, 0)
     block_colour = (255, 165, 91)
     path_block_colour = (255,116, 0)
@@ -327,9 +333,9 @@ if __name__ == '__main__':
     obstacle_colour = (23,15,9)
     start_colour = (255, 0, 0)
     end_colour = (0, 255, 0)
-    spacing = 1.3 # Make this number higher if you want to have a smaller box_size
-    horizontal = 100
-    vertical = 60
+    spacing = 1.1 # Make this number higher if you want to have a smaller box_size
+    horizontal = 60
+    vertical = 35
     width = int(horizontal*block_size*spacing)
     height = int(vertical*block_size*spacing)
     FONT = pygame.font.SysFont("comicsansms", 20)
