@@ -1,4 +1,3 @@
- 
 #!/usr/bin/env python3
 import time
 import copy
@@ -13,8 +12,10 @@ import math
 # Use c to clear the work of the algorithm,
 # and keep the obstacles you have drawn
 # Use space to start the algorithm
-# Use key up to increase the delay between each
-# step in the algorithm, and key down to decrease
+# Use right mouse button to draw obstacles
+# Use left mouse button to remove obstacles
+# Use arrow up to increase the delay between each
+# step in the algorithm, and arrow down to decrease
 #################################################
 
 
@@ -334,7 +335,7 @@ if __name__ == '__main__':
     start_colour = (255, 0, 0)
     end_colour = (0, 255, 0)
     spacing = 1.1 # Make this number higher if you want to have a smaller box_size
-    horizontal = 60
+    horizontal = 40
     vertical = 35
     width = int(horizontal*block_size*spacing)
     height = int(vertical*block_size*spacing)
