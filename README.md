@@ -16,3 +16,5 @@ When the progtam is running, a grid of boxes will appear. The program is control
 * Use **c** to clear the work of the algorithm, and keep the obstacles you have drawn.
 * Use space to start the algorithm.
 * Use arrow up to increase the delay between each step in the algorithm, and arrow down to decrease (resulting in a faster/slower visualization)
+![map](https://github.com/Martin-Ansteensen/AStar/assets/50178947/4ab0c134-d82d-47ec-8547-48941611c653)
+![solved](https://github.com/Martin-Ansteensen/AStar/assets/50178947/90fcdde9-8222-45ba-89d1-eaa8c44dcb60)
