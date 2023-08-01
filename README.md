@@ -7,7 +7,7 @@ You can either:
 * Run A_Star_Pathfinding.exe in build/exe.win32-3.8.
 * Run A_Star_Pathfinding.py in the main folder (you will then have to install necessary  dependencies).
 
-When the progtam is running, a grid of boxes will appear. The program is controlled by using the mouse/touchpad and the keyboard. The commands for opearting the program are the following:
+When the progam is running, a grid of boxes will appear. The following commands are used to interact with the program.
 
 * Use the keys **e** and **s** to mark the start and end point of the path.
 * Use **r** to reset the grid.
